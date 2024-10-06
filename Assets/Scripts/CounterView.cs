@@ -6,24 +6,42 @@ public class CounterView : MonoBehaviour
 {
     [SerializeField] private TMP_Text _counterText;
 
-    private Counter _counter;
-    private bool _isCounting = true;
-
-    private void Start()
+    private WaitForSeconds _waitTime = new WaitForSeconds(0.5f);
+    private Counter _counter = new Counter();
+    private Coroutine _counterCoroutine = null;
+    private bool _isCounting = false;
+    
+    private void Update()
     {
-        _counter = new Counter();
-        _counter.OnCountChanged += UpdateCounterText;
-        StartCoroutine(UpdateCounter());
-
-        // Добавляем обработчик клика по тексту
-        if (_counterText != null)
+        if (Input.GetMouseButtonDown(0))
         {
-            var button = _counterText.GetComponentInParent<UnityEngine.UI.Button>();
-            if (button == null)
+            if (_isCounting)
             {
-                button = _counterText.gameObject.AddComponent<UnityEngine.UI.Button>();
+                StopCounter();
             }
-            button.onClick.AddListener(ToggleCounting);
+            else
+            {
+                StartCounter();
+            }
+        }
+    }
+
+    private void StartCounter()
+    {
+        if (_counterCoroutine == null)
+        {
+            _isCounting = true;
+            _counterCoroutine = StartCoroutine(UpdateCounter());
+        }
+    }
+
+    private void StopCounter()
+    {
+        if (_counterCoroutine != null)
+        {
+            StopCoroutine(_counterCoroutine);
+            _counterCoroutine = null;
+            _isCounting = false;
         }
     }
 
@@ -31,24 +49,13 @@ public class CounterView : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(0.5f);
-            if (_isCounting)
+            yield return _waitTime;
+
+            if (_counterText != null)
             {
                 _counter.Increment();
+                _counterText.text = "Count: " + _counter.Count;
             }
         }
-    }
-
-    private void UpdateCounterText(float count)
-    {
-        if (_counterText != null)
-        {
-            _counterText.text = "Count: " + count;
-        }
-    }
-
-    private void ToggleCounting()
-    {
-        _isCounting = !_isCounting;
     }
 }
